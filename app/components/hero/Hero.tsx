@@ -13,15 +13,20 @@ export function Hero() {
             <HeroBadge />
 
             <h1 style={SERIF} className="text-5xl md:text-[3.75rem] text-foreground leading-[1.08] mb-6 tracking-tight">
+              Someone already chose you.
+              <br />
               Dating in college
               <br />
               just got{' '}
-              <em className="text-primary">interesting.</em>
+              <em className="text-primary">better.</em>
             </h1>
 
             <p className="text-base md:text-lg text-muted-foreground leading-relaxed mb-9 max-w-md">
-              No swiping. No browsing through profiles at 2am. Just someone worth
-              meeting — showing up right in your texts.
+              No profiles.
+              <br/>
+              No swiping.
+              <br/>
+              Just a real introduction — from someone who knows you.
             </p>
 
             <HeroCTAs />

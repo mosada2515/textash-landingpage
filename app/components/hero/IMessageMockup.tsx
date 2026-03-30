@@ -20,16 +20,16 @@ export function IMessageMockup() {
 
       <div className="flex flex-col gap-2">
         <div className="self-start max-w-[82%] bg-muted text-foreground text-sm leading-snug px-4 py-2.5 rounded-[18px] rounded-bl-[4px]">
-          hey 👋 I think I found someone for you
+          Hey Jack, I think I found someone for you 
         </div>
         <div className="self-start max-w-[82%] bg-muted text-foreground text-sm leading-snug px-4 py-2.5 rounded-[18px] rounded-bl-[4px]">
           her name's Sophie. same campus, loves hiking, actually funny. I'm going to make an intro.
         </div>
         <div className="self-end max-w-[82%] bg-primary text-primary-foreground text-sm leading-snug px-4 py-2.5 rounded-[18px] rounded-br-[4px]">
-          wait who is this lol
+          I'm listening... 👀
         </div>
-        <div className="self-end max-w-[82%] bg-primary text-primary-foreground text-sm leading-snug px-4 py-2.5 rounded-[18px] rounded-br-[4px]">
-          ok fine, I'm listening
+        <div className="self-start max-w-[82%] bg-muted text-foreground text-sm leading-snug px-4 py-2.5 rounded-[18px] rounded-bl-[4px]">
+          You got this 😉
         </div>
       </div>
     </div>
