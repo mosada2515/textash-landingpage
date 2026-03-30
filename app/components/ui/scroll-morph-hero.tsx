@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, useTransform, useSpring, useMotionValue } from "framer-motion";
+import { BGPattern } from "@/components/ui/bg-pattern";
+import { IMessageBubble } from "./IMessageBubble";
 import img1 from "../../images/image1.jpeg";
 import img2 from "../../images/image2.jpeg";
 import img3 from "../../images/image3.jpeg";
@@ -25,6 +27,152 @@ import img20 from "../../images/image20.jpeg";
 
 // --- Types ---
 export type AnimationPhase = "scatter" | "line" | "circle" | "bottom-strip";
+
+export interface AshMessage {
+    id: string;
+    text: string;
+    /** Stagger delay in seconds after bubbles become visible */
+    delay: number;
+    anchor: {
+        x: number;
+        y: number;
+    };
+    maxWidth?: number;
+    /** Phase offset for the floating drift so bubbles move asynchronously */
+    drift: {
+        x: number;
+        y: number;
+        rotate: number;
+        duration?: number;
+    };
+    hideOnMobile?: boolean;
+}
+
+const ASH_MESSAGES: AshMessage[] = [
+    {
+        id: "m1",
+        text: "I found someone for you.",
+        delay: 0.2,
+        anchor: { x: -500, y: -320 },
+        maxWidth: 246,
+        drift: { x: 12, y: 10, rotate: -1.4, duration: 4.4 },
+        hideOnMobile: true,
+    },
+    {
+        id: "m2",
+        text: "Same campus. Good taste.",
+        delay: 0.6,
+        anchor: { x: 455, y: -336 },
+        maxWidth: 255,
+        drift: { x: 10, y: 8, rotate: 0.9, duration: 4.1 },
+    },
+    {
+        id: "m3",
+        text: "You'd actually like her.",
+        delay: 1.0,
+        anchor: { x: -560, y: -58 },
+        maxWidth: 248,
+        drift: { x: 8, y: 12, rotate: 1.1, duration: 4.8 },
+        hideOnMobile: true,
+    },
+    {
+        id: "m4",
+        text: "Making the intro.",
+        delay: 1.4,
+        anchor: { x: 560, y: 72 },
+        maxWidth: 216,
+        drift: { x: 11, y: 9, rotate: -0.8, duration: 4.6 },
+    },
+    {
+        id: "m5",
+        text: "Trust me on this one.",
+        delay: 1.8,
+        anchor: { x: -522, y: 250 },
+        maxWidth: 246,
+        drift: { x: 9, y: 11, rotate: -1.2, duration: 4.5 },
+        hideOnMobile: true,
+    },
+    {
+        id: "m6",
+        text: "Lowkey perfect for you.",
+        delay: 2.1,
+        anchor: { x: 610, y: 312 },
+        maxWidth: 246,
+        drift: { x: 12, y: 10, rotate: 1.4, duration: 4.9 },
+    },
+];
+
+function AshBubble({
+    message,
+    visible,
+    isMobile,
+    containerWidth,
+}: {
+    message: AshMessage;
+    visible: boolean;
+    isMobile: boolean;
+    containerWidth: number;
+}) {
+    const desktopScale = containerWidth
+        ? Math.min(1, Math.max(0.76, (containerWidth - 120) / 1320))
+        : 1;
+    const positionScale = isMobile ? 0.44 : desktopScale;
+    const anchorX = message.anchor.x * positionScale;
+    const anchorY = message.anchor.y * positionScale;
+    const bubbleWidth = isMobile
+        ? Math.min(message.maxWidth ?? 320, 220)
+        : message.maxWidth ?? 320;
+
+    return (
+        <div
+            style={{ position: "absolute", left: "50%", top: "50%", zIndex: 5 }}
+            className={`${message.hideOnMobile ? "hidden md:block" : "block"} pointer-events-none`}
+            aria-hidden="true"
+        >
+            <div style={{ transform: "translate(-50%, -50%)" }}>
+                <motion.div
+                    initial={{ opacity: 0, x: anchorX, y: anchorY + 12, scale: 0.95 }}
+                    animate={visible
+                        ? { opacity: 1, x: anchorX, y: anchorY, scale: 1 }
+                        : { opacity: 0, x: anchorX, y: anchorY + 12, scale: 0.95 }}
+                    transition={{
+                        delay: visible ? message.delay : 0,
+                        duration: 0.55,
+                        ease: [0.22, 1, 0.36, 1],
+                    }}
+                >
+                    <motion.div
+                        animate={{
+                            x: [0, message.drift.x * 0.38, 0, -message.drift.x * 0.16, 0],
+                            y: [0, -message.drift.y * 0.42, 0, message.drift.y * 0.18, 0],
+                            rotate: [
+                                message.drift.rotate * 0.35,
+                                message.drift.rotate * 0.12,
+                                message.drift.rotate * 0.35,
+                                message.drift.rotate * 0.48,
+                                message.drift.rotate * 0.35,
+                            ],
+                        }}
+                        transition={{
+                            duration: (message.drift.duration ?? 4.4) + 1,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                        style={{
+                            transformOrigin: "center center",
+                        }}
+                    >
+                        <IMessageBubble
+                            text={message.text}
+                            className="w-fit"
+                            style={{ maxWidth: bubbleWidth }}
+                        />
+                    </motion.div>
+                </motion.div>
+            </div>
+        </div>
+    );
+}
 
 interface FlipCardProps {
     src: string;
@@ -124,11 +272,16 @@ const IMAGES: string[] = [
 ];
 
 const lerp = (start: number, end: number, t: number) => start * (1 - t) + end * t;
+const seededUnit = (seed: number) => {
+    const value = Math.sin(seed * 12.9898 + 78.233) * 43758.5453123;
+    return value - Math.floor(value);
+};
 
 export default function IntroAnimation() {
     const [introPhase, setIntroPhase] = useState<AnimationPhase>("scatter");
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
+    const isMobile = containerSize.width > 0 && containerSize.width < 768;
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -161,6 +314,8 @@ export default function IntroAnimation() {
         if (!container) return;
 
         const handleWheel = (e: WheelEvent) => {
+            if (scrollRef.current >= MAX_SCROLL && e.deltaY > 0) return;
+            if (scrollRef.current <= 0 && e.deltaY < 0) return;
             e.preventDefault();
             const newScroll = Math.min(Math.max(scrollRef.current + e.deltaY, 0), MAX_SCROLL);
             scrollRef.current = newScroll;
@@ -175,6 +330,9 @@ export default function IntroAnimation() {
             const touchY = e.touches[0].clientY;
             const deltaY = touchStartY - touchY;
             touchStartY = touchY;
+            if (scrollRef.current >= MAX_SCROLL && deltaY > 0) return;
+            if (scrollRef.current <= 0 && deltaY < 0) return;
+            e.preventDefault();
             const newScroll = Math.min(Math.max(scrollRef.current + deltaY, 0), MAX_SCROLL);
             scrollRef.current = newScroll;
             virtualScroll.set(newScroll);
@@ -221,10 +379,10 @@ export default function IntroAnimation() {
     }, []);
 
     const scatterPositions = useMemo(() => {
-        return IMAGES.map(() => ({
-            x: (Math.random() - 0.5) * 1500,
-            y: (Math.random() - 0.5) * 1000,
-            rotation: (Math.random() - 0.5) * 180,
+        return IMAGES.map((_, index) => ({
+            x: (seededUnit(index + 1) - 0.5) * 1500,
+            y: (seededUnit(index + 41) - 0.5) * 1000,
+            rotation: (seededUnit(index + 101) - 0.5) * 180,
             scale: 0.6,
             opacity: 0,
         }));
@@ -249,11 +407,18 @@ export default function IntroAnimation() {
     const contentY = useTransform(smoothMorph, [0.8, 1], [20, 0]);
 
     return (
-        <div ref={containerRef} className="relative w-full h-full bg-[#FAFAFA] overflow-hidden">
+        <div ref={containerRef} className="relative w-full h-full overflow-hidden" style={{ backgroundColor: "#f8efe2" }}>
+            <BGPattern
+                variant="dots"
+                mask="fade-edges"
+                size={22}
+                fill="rgba(155, 44, 44, 0.65)"
+                className="z-0 opacity-70 pointer-events-none"
+            />
             <div className="flex h-full w-full flex-col items-center justify-center" style={{ perspective: "1000px" }}>
 
                 {/* Intro Text */}
-                <div className="absolute z-0 flex flex-col items-center justify-center text-center pointer-events-none top-1/2 -translate-y-1/2 px-6">
+                <div className="absolute z-0 flex flex-col items-center justify-center text-center pointer-events-none top-1/2 px-6" style={{ transform: 'translateY(calc(-50% + 70px))' }}>
                     <motion.h1
                         initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
                         animate={introPhase === "circle" && morphValue < 0.5 ? { opacity: 1 - morphValue * 2, y: 0, filter: "blur(0px)" } : { opacity: 0, filter: "blur(10px)" }}
@@ -285,10 +450,21 @@ export default function IntroAnimation() {
                     </motion.p>
                 </div>
 
+                {/* Ash Message Bubbles */}
+                {ASH_MESSAGES.map((msg) => (
+                    <AshBubble
+                        key={msg.id}
+                        message={msg}
+                        visible={introPhase === "circle" && morphValue < 0.35}
+                        isMobile={isMobile}
+                        containerWidth={containerSize.width}
+                    />
+                ))}
+
                 {/* Arc Active Content */}
                 <motion.div
                     style={{ opacity: contentOpacity, y: contentY }}
-                    className="absolute top-[8%] z-10 flex flex-col items-center justify-center text-center pointer-events-none px-4"
+                    className="absolute top-[20%] z-10 flex flex-col items-center justify-center text-center pointer-events-none px-4"
                 >
                     <div
                         className="inline-flex items-center text-[10px] font-semibold tracking-[0.15em] px-3 py-1.5 rounded-full border mb-5 uppercase"
@@ -308,6 +484,8 @@ export default function IntroAnimation() {
                             color: "var(--foreground, #1a1a1a)",
                         }}
                     >
+                        Text <em style={{ color: "var(--primary, #9b2c2c)" }}>Ash</em> &
+                        <br />
                         Meet them.
                     </h2>
                     <p
@@ -345,7 +523,7 @@ export default function IntroAnimation() {
                 </motion.div>
 
                 {/* Cards */}
-                <div className="relative flex items-center justify-center w-full h-full">
+                <div className="relative flex items-center justify-center w-full h-full" style={{ paddingTop: '140px' }}>
                     {IMAGES.slice(0, TOTAL_IMAGES).map((src, i) => {
                         let target = { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1 };
 
@@ -357,7 +535,6 @@ export default function IntroAnimation() {
                             const lineX = i * lineSpacing - lineTotalWidth / 2;
                             target = { x: lineX, y: 0, rotation: 0, scale: 1, opacity: 1 };
                         } else {
-                            const isMobile = containerSize.width < 768;
                             const minDimension = Math.min(containerSize.width, containerSize.height);
 
                             const circleRadius = Math.min(minDimension * 0.35, 350);
